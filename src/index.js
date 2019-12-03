@@ -194,7 +194,6 @@ class MediaContainer extends React.Component {
         <div className="media-wrapper">
           <div>{this.props.audio.name}</div>
           <div className="d-flex">
-            {/*<div className="media-icon" onClick={this.playAudio}>*/}
             <div className="media-icon" onClick={this.togglePlay}>
               <img src={src} alt="play"/>
             </div>
