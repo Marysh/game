@@ -101,7 +101,6 @@ ol, ul {
 .media-icon:hover {
     cursor: pointer;
     transition: .2s;
-    box-shadow: 0 0 6px 2px;
 }
 
 .media-icon img {
