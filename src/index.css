@@ -11,6 +11,12 @@ ol, ul {
 .d-flex {
     display: flex;
 }
+.space-between {
+    justify-content: space-between;
+}
+.align-center {
+    align-items: center;
+}
 
 .board-row:after {
     clear: both;
@@ -73,12 +79,9 @@ ol, ul {
 
 .media-wrapper {
     padding: 10px 25px;
-    border-bottom: 1px solid #000000;
     background-color: #cccccc;
     border-radius: 15px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    margin-bottom: 5px;
 }
 
 .dropArea {
@@ -107,6 +110,13 @@ ol, ul {
     width: 100%;
 }
 
-.media-icon:not(:last-child) {
-    margin-right: 20px;
+.playLine-wrap {
+    width: 90%;
+    overflow: hidden;
+    border: 1px solid black;
+    border-radius: 3px;
+}
+.playLine {
+    height: 6px;
+    background-color: #000000;
 }

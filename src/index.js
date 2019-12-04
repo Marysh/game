@@ -97,14 +97,15 @@ class MediaContainer extends React.Component {
 
   state = {
     isPlaying: false,
-  }
+    currentAudioTime: 0,
+    audioDuration: 0
+  };
 
   componentDidMount() {
-    this.context = new (window.AudioContext || window.webkitAudioContext)();
+    this.contextAudio = new (window.AudioContext || window.webkitAudioContext)();
     this.reader = new FileReader();
     let self = this;
     this.startcount = 0;
-    this.isPlaying = false;
 
     this.reader.onload = function () {
       let arrayBuffer = this.result;
@@ -124,56 +125,67 @@ class MediaContainer extends React.Component {
 
 
   createAudio = () => {
-    this.processor = this.context.createScriptProcessor(2048, 1, 1);
-    this.analyser = this.context.createAnalyser();
-    this.source.connect(this.context.destination);
+    this.processor = this.contextAudio.createScriptProcessor(2048, 1, 1);
+    this.analyser = this.contextAudio.createAnalyser();
+    this.source.connect(this.contextAudio.destination);
     this.source.connect(this.analyser);
     this.analyser.connect(this.processor);
-    this.processor.connect(this.context.destination);
-    this.time = this.source.buffer.duration / 60;
-    console.log(this.time);
+    this.processor.connect(this.contextAudio.destination);
+    this.setState({audioDuration: Math.floor(this.source.buffer.duration / 60 * 100) / 100})
   };
 
   initAudio = (data) => {
-    this.source = this.context.createBufferSource();
+    this.source = this.contextAudio.createBufferSource();
 
-    if (this.context.decodeAudioData) {
-      this.context.decodeAudioData(data, (buffer) => {
+    if (this.contextAudio.decodeAudioData) {
+      this.contextAudio.decodeAudioData(data, (buffer) => {
         this.source.buffer = buffer;
         this.createAudio();
       }, (e) => {
         console.log(e);
       });
     } else {
-      this.source.buffer = this.context.createBuffer(data, false /*mixToMono*/);
+      this.source.buffer = this.contextAudio.createBuffer(data, false /*mixToMono*/);
       this.createAudio();
     }
+  };
+
+  initialAudioSetInterval = () => {
+    this.audioSetInterval = setInterval(() => {
+      this.setState({currentAudioTime: this.source.context.currentTime});
+    }, 1000);
+  };
+
+  residualAudioDuration = () => {
+    this.audioDurationInterval = setInterval(() => {
+      this.setState({audioDuration: Math.floor(this.source.buffer.duration - this.source.context.currentTime / 60 * 100) / 100});
+    }, 1000);
+  };
+  clearSetInterval = () => {
+    clearInterval(this.audioSetInterval);
   };
 
   playAudio() {
     if (this.startcount === 0) {
       this.source.start();
       this.startcount++;
+      this.initialAudioSetInterval();
+      this.residualAudioDuration();
     } else {
       this.source.context.resume();
-      console.log(Math.floor((this.source.buffer.duration - this.source.context.currentTime) / 60 * 100) / 100);
+      this.initialAudioSetInterval();
+      this.residualAudioDuration();
     }
   }
 
   pauseAudio() {
     this.source.context.suspend();
+    this.clearSetInterval();
+    clearInterval(this.audioDurationInterval)
   }
 
+
   togglePlay = () => {
-    // if (this.isPlaying === false) {
-    //   // this.playAudio();
-    //   this.isPlaying = true;
-    //   console.log(this.isPlaying);
-    // } else {
-    //   // this.pauseAudio();
-    //   this.isPlaying = false;
-    //   console.log(this.isPlaying);
-    // }
     const {isPlaying} = this.state;
 
     if (!isPlaying) {
@@ -185,6 +197,21 @@ class MediaContainer extends React.Component {
     this.setState({isPlaying: !isPlaying})
   };
 
+  get audioTimePercentage() {
+    const {currentAudioTime} = this.state;
+    return Math.floor((100 * currentAudioTime / this.source.buffer.duration));
+  }
+
+  get duration() {
+    const { currentAudioTime} = this.state;
+    const duration = Math.floor(this.source.buffer.duration);
+    const minutes = Math.floor((duration - currentAudioTime) / 60);
+    let seconds = Math.floor((duration - currentAudioTime) % 60);
+    return `${minutes}:${seconds}`;
+
+    // return ((duration - currentAudioTime) / 60).toFixed(2);
+  }
+
   render() {
     const {isPlaying} = this.state;
     const src = isPlaying ? 'https://www.pngrepo.com/download/176023/music-pause-button-pair-of-lines.png' : 'https://icon-library.net/images/play-icon-svg/play-icon-svg-15.jpg';
@@ -192,12 +219,21 @@ class MediaContainer extends React.Component {
     return (
       <div>
         <div className="media-wrapper">
-          <div>{this.props.audio.name}</div>
-          <div className="d-flex">
+          <div className="d-flex align-center space-between">
+            <div>{this.props.audio.name}</div>
             <div className="media-icon" onClick={this.togglePlay}>
               <img src={src} alt="play"/>
             </div>
           </div>
+          {
+            this.source &&
+            <div className="d-flex space-between align-center">
+              <div className="playLine-wrap">
+                <div className="playLine" style={{width: this.audioTimePercentage}}/>
+              </div>
+              <div>{this.duration}</div>
+            </div>
+          }
         </div>
       </div>
     )
