@@ -96,9 +96,29 @@ class MediaContainer extends React.Component {
     audioDuration: 0,
   };
 
+
   componentDidMount() {
     const audioUrl = window.URL.createObjectURL(this.props.audio);
     this.audioRef.src = audioUrl;
+
+    //
+    // this.canvasRef.width = window.innerWidth;
+    // this.canvasRef.height = window.innerHeight;
+    //
+    // let ctx = this.canvasRef.getContext("2d");
+    // this.analyser.fftSize = 256;
+    //
+    // let bufferLength = this.analyser.frequencyBinCount;
+    // console.log(bufferLength);
+    //
+    // let dataArray = new Uint8Array(bufferLength);
+    //
+    // let WIDTH = this.canvasRef.width;
+    // let HEIGHT = this.canvasRef.height;
+    //
+    // let barWidth = (WIDTH / bufferLength) * 2.5;
+    // let barHeight;
+    // let x = 0;
 
     this.audioContext = new AudioContext();
     this.source = this.audioContext.createMediaElementSource(this.audioRef);
@@ -109,7 +129,6 @@ class MediaContainer extends React.Component {
 
     this.connectAudio();
   }
-
 
   setCurrentTime = (e) => {
     this.setState({currentAudioTime: e.target.currentTime})
@@ -147,8 +166,10 @@ class MediaContainer extends React.Component {
     this.lowShelf = this.audioContext.createBiquadFilter();
     this.highPass = this.audioContext.createBiquadFilter();
     this.lowPass = this.audioContext.createBiquadFilter();
+    this.analyser = this.audioContext.createAnalyser();
 
-    this.source.connect(this.highShelf);
+    this.source.connect(this.analyser);
+    this.analyser.connect(this.highShelf);
     this.highShelf.connect(this.lowShelf);
     this.lowShelf.connect(this.highPass);
     this.highPass.connect(this.lowPass);
@@ -171,13 +192,54 @@ class MediaContainer extends React.Component {
     this.lowPass.frequency.value = 880;
     this.lowPass.Q.value = 0.7;
 
-    this.audioGain.gain.value = 0.5
+    this.audioGain.gain.value = 0.5;
 
     // this.audioGain.connect(this.audioContext.destination);
     // this.source.connect(this.audioContext.destination);
     // this.source.connect(this.audioGain);
+    this.renderAudioVisualization()
   };
 
+  renderAudioVisualization = () => {
+    let bufferLength = this.analyser.frequencyBinCount;
+    console.log(bufferLength);
+
+    let dataArray = new Uint8Array(bufferLength);
+
+    let WIDTH = this.canvasRef.width;
+    let HEIGHT = this.canvasRef.height;
+    let ctx = this.canvasRef.getContext("2d");
+
+    let barWidth = (WIDTH / bufferLength) * 2.5;
+    let barHeight;
+    let x = 0;
+
+    const renderFrame = () => {
+      requestAnimationFrame(renderFrame);
+
+      x = 0;
+
+      this.analyser.getByteFrequencyData(dataArray);
+
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      for (let i = 0; i < bufferLength; i++) {
+        barHeight = dataArray[i];
+
+        let r = barHeight + (25 * (i / bufferLength));
+        let g = 150 * (i / bufferLength);
+        let b = 50;
+
+        ctx.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
+        ctx.fillRect(x, HEIGHT - barHeight / 2, barWidth, barHeight / 2);
+
+        x += barWidth + 1;
+      }
+    };
+
+    renderFrame();
+  };
 
   disconnect = () => {
     this.source.stop(0);
@@ -326,9 +388,10 @@ class MediaContainer extends React.Component {
               />
             </div>
           </div>
-
           <audio ref={ref => this.audioRef = ref}/>
         </div>
+
+        <canvas ref={ref => this.canvasRef = ref}/>
 
         <div className="d-flex space-between align-center filters-wrapper">
           <div className="d-flex">
@@ -418,7 +481,6 @@ class MediaContainer extends React.Component {
             />
           </div>
         </div>
-
       </div>
     )
   }
