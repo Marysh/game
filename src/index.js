@@ -90,34 +90,19 @@ class DropArea extends React.Component {
 }
 
 class MediaContainer extends React.Component {
-  // constructor(props) {
-  //   super(props);
-  //   this.playAudio = this.playAudio.bind(this);
-  //   this.pauseAudio = this.pauseAudio.bind(this);
-  //   this.audio = React.createRef();
-  // }
-
   state = {
     isPlaying: false,
     currentAudioTime: 0,
     audioDuration: 0,
-  };
+  }
 
   componentDidMount() {
-    // this.contextAudio = new (window.AudioContext || window.webkitAudioContext)();
-    // this.reader = new FileReader();
-    // let self = this;
-    // this.startcount = 0;
-    //
-    // this.reader.onload = function () {
-    //   let arrayBuffer = this.result;
-    //   self.initAudio(arrayBuffer);
-    // };
-    //
-    // this.reader.readAsArrayBuffer(this.props.audio);
-
     const audioUrl = window.URL.createObjectURL(this.props.audio);
     this.audioRef.src = audioUrl;
+
+    this.audioContext = new AudioContext();
+    this.source = this.audioContext.createMediaElementSource(this.audioRef);
+
     this.audioRef.addEventListener('timeupdate', (e) => {
       this.setState({currentAudioTime: e.target.currentTime})
     });
@@ -127,76 +112,86 @@ class MediaContainer extends React.Component {
     this.audioRef.addEventListener('durationchange', (e) => {
       this.setState({audioDuration: this.audioRef.duration})
     });
+
+    this.connectAudio();
   }
 
+  get duration() {
+    if (!this.audioRef) {
+      return '0:00';
+    }
+    const { currentAudioTime, audioDuration } = this.state;
+
+    const duration = Math.floor(audioDuration);
+    const minutes = Math.floor((duration - currentAudioTime) / 60);
+    let seconds = Math.floor((duration - currentAudioTime) % 60);
+
+    if (seconds < 10) {
+      seconds = '0' + seconds;
+    }
+
+    return `${minutes}:${seconds}`;
+  }
+
+  connectAudio = () => {
+    this.audioGain = this.audioContext.createGain();
+
+    this.audioGain.connect(this.audioContext.destination);
+    this.source.connect(this.audioContext.destination);
+    this.source.connect(this.audioGain);
+  }
 
   disconnect = () => {
     this.source.stop(0);
     this.source.disconnect(0);
-    this.processor.disconnect(0);
-    this.analyser.disconnect(0);
-  };
+    this.audioGain.disconnect();
+  }
 
+  // createAudio = () => {
+  //   this.processor = this.contextAudio.createScriptProcessor(2048, 1, 1);
+  //   this.analyser = this.contextAudio.createAnalyser();
+  //   this.source.connect(this.contextAudio.destination);
+  //   this.source.connect(this.analyser);
+  //   this.analyser.connect(this.processor);
+  //   this.processor.connect(this.contextAudio.destination);
+  //   this.setState({audioDuration: Math.floor(this.source.buffer.duration / 60 * 100) / 100});
+  // };
 
-  createAudio = () => {
-    this.processor = this.contextAudio.createScriptProcessor(2048, 1, 1);
-    this.analyser = this.contextAudio.createAnalyser();
-    this.source.connect(this.contextAudio.destination);
-    this.source.connect(this.analyser);
-    this.analyser.connect(this.processor);
-    this.processor.connect(this.contextAudio.destination);
-    this.setState({audioDuration: Math.floor(this.source.buffer.duration / 60 * 100) / 100});
-    // let mediaSourceNode = this.contextAudio.createMediaElementSource(this.audio);
-    // mediaSourceNode.connect(this.contextAudio.destination);
-  };
+  // initAudio = (data) => {
+  //   this.source = this.contextAudio.createBufferSource();
+  //
+  //   if (this.contextAudio.decodeAudioData) {
+  //     this.contextAudio.decodeAudioData(data, (buffer) => {
+  //       this.source.buffer = buffer;
+  //       this.createAudio();
+  //     }, (e) => {
+  //       console.log(e);
+  //     });
+  //   } else {
+  //     this.source.buffer = this.contextAudio.createBuffer(data, false /*mixToMono*/);
+  //     this.createAudio();
+  //   }
+  // };
 
-  initAudio = (data) => {
-    this.source = this.contextAudio.createBufferSource();
+  // initialAudioSetInterval = () => {
+  //   this.audioSetInterval = setInterval(() => {
+  //     this.setState({currentAudioTime: this.source.context.currentTime});
+  //   }, 1000);
+  // };
 
-    if (this.contextAudio.decodeAudioData) {
-      this.contextAudio.decodeAudioData(data, (buffer) => {
-        this.source.buffer = buffer;
-        this.createAudio();
-      }, (e) => {
-        console.log(e);
-      });
-    } else {
-      this.source.buffer = this.contextAudio.createBuffer(data, false /*mixToMono*/);
-      this.createAudio();
-    }
-  };
-
-  initialAudioSetInterval = () => {
-    this.audioSetInterval = setInterval(() => {
-      this.setState({currentAudioTime: this.source.context.currentTime});
-    }, 1000);
-  };
-
-  clearSetInterval = () => {
-    clearInterval(this.audioSetInterval);
-  };
+  // clearSetInterval = () => {
+  //   clearInterval(this.audioSetInterval);
+  // };
 
   playAudio() {
-    // if (this.startcount === 0) {
-    //   this.source.start();
-    //   this.startcount++;
-    //   this.initialAudioSetInterval();
-    // } else {
-    //   this.source.context.resume();
-    //   this.initialAudioSetInterval();
-    // }
     this.audioRef.play();
   }
 
   pauseAudio() {
-    // this.source.context.suspend();
-    // this.clearSetInterval();
-    // clearInterval(this.audioDurationInterval)
     this.audioRef.pause();
   }
 
-
-  togglePlay = () => {
+  handleTogglePlay = () => {
     const {isPlaying} = this.state;
 
     if (!isPlaying) {
@@ -208,32 +203,20 @@ class MediaContainer extends React.Component {
     this.setState({isPlaying: !isPlaying})
   };
 
-  get audioTimePercentage() {
-    const {currentAudioTime} = this.state;
-    return Math.floor((100 * currentAudioTime / this.source.buffer.duration));
-  }
-
-  get duration() {
-    if (!this.audioRef) {
-      return '0:00';
-    }
-    const {currentAudioTime, audioDuration} = this.state;
-    // const duration = Math.floor(this.source.buffer.duration);
-    const duration = Math.floor(audioDuration);
-    const minutes = Math.floor((duration - currentAudioTime) / 60);
-    let seconds = Math.floor((duration - currentAudioTime) % 60);
-    if (seconds < 10) {
-      seconds = '0' + seconds;
-    }
-    return `${minutes}:${seconds}`;
-
-    // return ((duration - currentAudioTime) / 60).toFixed(2);
-  }
-
   handleAfterSliderChange = (e) => {
     this.setState({ currentAudioTime: e });
     this.audioRef.currentTime = e;
   };
+
+  handleMute = () => {
+    const { value } = this.audioGain.gain;
+
+    if (value <= 0) {
+      this.audioGain.gain.setValueAtTime(1, this.audioRef.currentTime);
+    } else {
+      this.audioGain.gain.setValueAtTime(-1, this.audioRef.currentTime);
+    }
+  }
 
   render() {
     const {isPlaying, currentAudioTime} = this.state;
@@ -254,10 +237,13 @@ class MediaContainer extends React.Component {
                 max={songSecond}
                 value={currentAudioTime}
               />
-              <div style={{margin: '0 10px'}}>{this.duration}</div>
-              <div className="media-icon" onClick={this.togglePlay}>
+
+              <div style={{ margin: '0 10px' }}>{this.duration}</div>
+
+              <div className="media-icon" onClick={this.handleTogglePlay}>
                 <img src={src} alt="Icon"/>
               </div>
+              <button onClick={this.handleMute}>Mute</button>
             </div>
 
           </div>
