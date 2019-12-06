@@ -151,3 +151,30 @@ ol, ul {
 .example-track-0 {
     background: #000000;
 }
+
+.filters-wrapper {
+    margin-top: 50px;
+}
+
+.vertical-slider {
+    width: 10px;
+    height: 150px;
+    background-color: gray;
+    border: 1px solid black;
+    border-radius: 20px;
+}
+
+.vertical-slider-track-0 {
+    width: 100%;
+    background-color: black;
+    border-radius: 20px;
+}
+
+.vertical-slider-thumb {
+    height: 20px;
+    width: 20px;
+    background-color: black;
+    border: 2px solid white;
+    border-radius: 15px;
+    transform: translateX(-25%);
+}
