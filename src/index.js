@@ -94,7 +94,7 @@ class MediaContainer extends React.Component {
     isPlaying: false,
     currentAudioTime: 0,
     audioDuration: 0,
-  }
+  };
 
   componentDidMount() {
     const audioUrl = window.URL.createObjectURL(this.props.audio);
@@ -103,24 +103,31 @@ class MediaContainer extends React.Component {
     this.audioContext = new AudioContext();
     this.source = this.audioContext.createMediaElementSource(this.audioRef);
 
-    this.audioRef.addEventListener('timeupdate', (e) => {
-      this.setState({currentAudioTime: e.target.currentTime})
-    });
-    this.audioRef.addEventListener('ended', (e) => {
-      this.setState({isPlaying: false, currentAudioTime: this.audioRef.duration})
-    });
-    this.audioRef.addEventListener('durationchange', (e) => {
-      this.setState({audioDuration: this.audioRef.duration})
-    });
+    this.audioRef.addEventListener('timeupdate', this.setCurrentTime);
+    this.audioRef.addEventListener('ended', this.onAudioEnd);
+    this.audioRef.addEventListener('durationchange', this.changeAudioDuration);
 
     this.connectAudio();
   }
+
+
+  setCurrentTime = (e) => {
+    this.setState({currentAudioTime: e.target.currentTime})
+  };
+
+  onAudioEnd = (e) => {
+    this.setState({isPlaying: false, currentAudioTime: this.audioRef.duration})
+  };
+
+  changeAudioDuration = () => {
+    this.setState({audioDuration: this.audioRef.duration})
+  };
 
   get duration() {
     if (!this.audioRef) {
       return '0:00';
     }
-    const { currentAudioTime, audioDuration } = this.state;
+    const {currentAudioTime, audioDuration} = this.state;
 
     const duration = Math.floor(audioDuration);
     const minutes = Math.floor((duration - currentAudioTime) / 60);
@@ -150,30 +157,36 @@ class MediaContainer extends React.Component {
 
     this.highShelf.type = "highshelf";
     this.highShelf.frequency.value = 4700;
-    this.highShelf.gain.value = 0;
+    this.highShelf.gain.value = -50;
 
     this.lowShelf.type = "lowshelf";
     this.lowShelf.frequency.value = 35;
-    this.lowShelf.gain.value = 0;
+    this.lowShelf.gain.value = -50;
 
     this.highPass.type = "highpass";
     this.highPass.frequency.value = 800;
-    this.highPass.Q.value = 6;
+    this.highPass.Q.value = 0.7;
 
     this.lowPass.type = "lowpass";
     this.lowPass.frequency.value = 880;
-    this.lowPass.Q.value = 6;
+    this.lowPass.Q.value = 0.7;
+
+    this.audioGain.gain.value = 0.5
 
     // this.audioGain.connect(this.audioContext.destination);
     // this.source.connect(this.audioContext.destination);
     // this.source.connect(this.audioGain);
-  }
+  };
+
 
   disconnect = () => {
     this.source.stop(0);
     this.source.disconnect(0);
     this.audioGain.disconnect();
-  }
+    this.audioRef.removeEventListener('timeupdate', this.setCurrentTime);
+    this.audioRef.removeEventListener('ended', this.onAudioEnd);
+    this.audioRef.removeEventListener('durationchange', this.changeAudioDuration);
+  };
 
   // createAudio = () => {
   //   this.processor = this.contextAudio.createScriptProcessor(2048, 1, 1);
@@ -231,47 +244,49 @@ class MediaContainer extends React.Component {
     this.setState({isPlaying: !isPlaying})
   };
 
-  handleAfterSliderChange = (e) => {
-    this.setState({ currentAudioTime: e });
+  handleDurationChange = (e) => {
+    this.setState({currentAudioTime: e});
     this.audioRef.currentTime = e;
   };
 
-  handleMute = () => {
-    const { value } = this.audioGain.gain;
-
-    if (value === 0) {
-      this.audioGain.gain.setValueAtTime(1, this.audioRef.currentTime);
-    } else {
-      this.audioGain.gain.setValueAtTime(0, this.audioRef.currentTime);
-    }
-  }
-
-  handleMakeDistortionCurve = () => {
-    const randomHighShelf = Math.floor(Math.random() * 24000);
-    const randomHighPass = Math.floor(Math.random() * 24000);
-    const randomLowShelf = Math.floor(Math.random() * 24000);
-    const randomLowPass = Math.floor(Math.random() * 24000);
-    this.highShelf.frequency.setValueAtTime(randomHighShelf, this.audioRef.currentTime);
-    this.highPass.frequency.setValueAtTime(randomHighPass, this.audioRef.currentTime);
-    this.lowShelf.frequency.setValueAtTime(randomLowShelf, this.audioRef.currentTime);
-    this.lowPass.frequency.setValueAtTime(randomLowPass, this.audioRef.currentTime);
-    // debugger;
-  }
+  handleVolumeChange = (e) => {
+    this.audioGain.gain.setValueAtTime(e, this.audioRef.currentTime);
+  };
 
   handleHighShelfChange = (frequency) => {
     this.highShelf.frequency.setValueAtTime(frequency, this.audioRef.currentTime);
-  }
+  };
 
   handleHighPassChange = (frequency) => {
     this.highPass.frequency.setValueAtTime(frequency, this.audioRef.currentTime);
-  }
+  };
 
   handleLowShelfChange = (frequency) => {
     this.lowShelf.frequency.setValueAtTime(frequency, this.audioRef.currentTime);
-  }
+  };
 
   handleLowPassChange = (frequency) => {
     this.lowPass.frequency.setValueAtTime(frequency, this.audioRef.currentTime);
+  };
+
+  handleHighShelfGain = (gain) => {
+    this.highShelf.gain.setValueAtTime(gain, this.audioRef.currentTime);
+  };
+
+  handleLowShelfGain = (gain) => {
+    this.lowShelf.gain.setValueAtTime(gain, this.audioRef.currentTime);
+  };
+
+  handleHighPassQ = (q) => {
+    this.highPass.Q.setValueAtTime(q, this.audioRef.currentTime);
+  };
+
+  handleLowPassQ = (q) => {
+    this.lowPass.Q.setValueAtTime(q, this.audioRef.currentTime);
+  };
+
+  componentWillUnmount() {
+    this.disconnect();
   }
 
 
@@ -290,17 +305,25 @@ class MediaContainer extends React.Component {
                 className="horizontal-slider"
                 thumbClassName="example-thumb"
                 trackClassName="example-track"
-                onChange={this.handleAfterSliderChange}
+                onChange={this.handleDurationChange}
                 max={songSecond}
                 value={currentAudioTime}
               />
 
-              <div style={{ margin: '0 10px' }}>{this.duration}</div>
+              <div style={{margin: '0 10px'}}>{this.duration}</div>
 
               <div className="media-icon" onClick={this.handleTogglePlay}>
                 <img src={src} alt="Icon"/>
               </div>
-              <button onClick={this.handleMute}>Mute</button>
+              <ReactSlider
+                className="volume-slider"
+                thumbClassName="volume-thumb"
+                trackClassName="volume-track"
+                onChange={this.handleVolumeChange}
+                max={1}
+                step={0.01}
+                defaultValue={0.5}
+              />
             </div>
           </div>
 
@@ -308,42 +331,92 @@ class MediaContainer extends React.Component {
         </div>
 
         <div className="d-flex space-between align-center filters-wrapper">
-          <ReactSlider
-            className="vertical-slider"
-            thumbClassName="vertical-slider-thumb"
-            trackClassName="vertical-slider-track"
-            orientation="vertical"
-            onChange={this.handleHighShelfChange}
-            max={24000}
-            invert
-          />
-          <ReactSlider
-            className="vertical-slider"
-            thumbClassName="vertical-slider-thumb"
-            trackClassName="vertical-slider-track"
-            orientation="vertical"
-            onChange={this.handleHighPassChange}
-            max={24000}
-            invert
-          />
-          <ReactSlider
-            className="vertical-slider"
-            thumbClassName="vertical-slider-thumb"
-            trackClassName="vertical-slider-track"
-            orientation="vertical"
-            onChange={this.handleLowShelfChange}
-            max={24000}
-            invert
-          />
-          <ReactSlider
-            className="vertical-slider"
-            thumbClassName="vertical-slider-thumb"
-            trackClassName="vertical-slider-track"
-            orientation="vertical"
-            onChange={this.handleLowPassChange}
-            max={24000}
-            invert
-          />
+          <div className="d-flex">
+            <ReactSlider
+              className="vertical-slider"
+              thumbClassName="vertical-slider-thumb"
+              trackClassName="vertical-slider-track"
+              orientation="vertical"
+              onChange={this.handleHighShelfChange}
+              max={24000}
+              invert
+            />
+            <ReactSlider
+              className="vertical-slider"
+              thumbClassName="vertical-slider-thumb"
+              trackClassName="vertical-slider-track"
+              orientation="vertical"
+              onChange={this.handleHighShelfGain}
+              min={-50}
+              max={50}
+              invert
+            />
+          </div>
+          <div className="d-flex">
+            <ReactSlider
+              className="vertical-slider"
+              thumbClassName="vertical-slider-thumb"
+              trackClassName="vertical-slider-track"
+              orientation="vertical"
+              onChange={this.handleHighPassChange}
+              max={24000}
+              invert
+            />
+            <ReactSlider
+              className="vertical-slider"
+              thumbClassName="vertical-slider-thumb"
+              trackClassName="vertical-slider-track"
+              orientation="vertical"
+              onChange={this.handleLowShelfGain}
+              min={-50}
+              max={50}
+              invert
+            />
+          </div>
+          <div className="d-flex">
+            <ReactSlider
+              className="vertical-slider"
+              thumbClassName="vertical-slider-thumb"
+              trackClassName="vertical-slider-track"
+              orientation="vertical"
+              onChange={this.handleLowShelfChange}
+              max={24000}
+              invert
+            />
+            <ReactSlider
+              className="vertical-slider"
+              thumbClassName="vertical-slider-thumb"
+              trackClassName="vertical-slider-track"
+              orientation="vertical"
+              onChange={this.handleHighPassQ}
+              min={0.7}
+              max={12}
+              step={0.1}
+              invert
+            />
+          </div>
+          <div className="d-flex">
+            <ReactSlider
+              className="vertical-slider"
+              thumbClassName="vertical-slider-thumb"
+              trackClassName="vertical-slider-track"
+              orientation="vertical"
+              onChange={this.handleLowPassChange}
+              max={24000}
+              invert
+            />
+            <ReactSlider
+              className="vertical-slider"
+              thumbClassName="vertical-slider-thumb"
+              trackClassName="vertical-slider-track"
+              orientation="vertical"
+              onChange={this.handleLowPassQ}
+              min={0.7}
+              max={12}
+              step={0.1}
+              invert
+            />
+          </div>
         </div>
 
       </div>
