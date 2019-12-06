@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import './audioService'
+import ReactSlider from "react-slider";
 
 class Wrapper extends React.Component {
   render() {
@@ -89,30 +90,43 @@ class DropArea extends React.Component {
 }
 
 class MediaContainer extends React.Component {
-  constructor(props) {
-    super(props);
-    this.playAudio = this.playAudio.bind(this);
-    this.pauseAudio = this.pauseAudio.bind(this);
-  }
+  // constructor(props) {
+  //   super(props);
+  //   this.playAudio = this.playAudio.bind(this);
+  //   this.pauseAudio = this.pauseAudio.bind(this);
+  //   this.audio = React.createRef();
+  // }
 
   state = {
     isPlaying: false,
     currentAudioTime: 0,
-    audioDuration: 0
+    audioDuration: 0,
   };
 
   componentDidMount() {
-    this.contextAudio = new (window.AudioContext || window.webkitAudioContext)();
-    this.reader = new FileReader();
-    let self = this;
-    this.startcount = 0;
+    // this.contextAudio = new (window.AudioContext || window.webkitAudioContext)();
+    // this.reader = new FileReader();
+    // let self = this;
+    // this.startcount = 0;
+    //
+    // this.reader.onload = function () {
+    //   let arrayBuffer = this.result;
+    //   self.initAudio(arrayBuffer);
+    // };
+    //
+    // this.reader.readAsArrayBuffer(this.props.audio);
 
-    this.reader.onload = function () {
-      let arrayBuffer = this.result;
-      self.initAudio(arrayBuffer);
-    };
-
-    this.reader.readAsArrayBuffer(this.props.audio);
+    const audioUrl = window.URL.createObjectURL(this.props.audio);
+    this.audioRef.src = audioUrl;
+    this.audioRef.addEventListener('timeupdate', (e) => {
+      this.setState({currentAudioTime: e.target.currentTime})
+    });
+    this.audioRef.addEventListener('ended', (e) => {
+      this.setState({isPlaying: false, currentAudioTime: this.audioRef.duration})
+    });
+    this.audioRef.addEventListener('durationchange', (e) => {
+      this.setState({audioDuration: this.audioRef.duration})
+    });
   }
 
 
@@ -131,7 +145,9 @@ class MediaContainer extends React.Component {
     this.source.connect(this.analyser);
     this.analyser.connect(this.processor);
     this.processor.connect(this.contextAudio.destination);
-    this.setState({audioDuration: Math.floor(this.source.buffer.duration / 60 * 100) / 100})
+    this.setState({audioDuration: Math.floor(this.source.buffer.duration / 60 * 100) / 100});
+    // let mediaSourceNode = this.contextAudio.createMediaElementSource(this.audio);
+    // mediaSourceNode.connect(this.contextAudio.destination);
   };
 
   initAudio = (data) => {
@@ -156,32 +172,27 @@ class MediaContainer extends React.Component {
     }, 1000);
   };
 
-  residualAudioDuration = () => {
-    this.audioDurationInterval = setInterval(() => {
-      this.setState({audioDuration: Math.floor(this.source.buffer.duration - this.source.context.currentTime / 60 * 100) / 100});
-    }, 1000);
-  };
   clearSetInterval = () => {
     clearInterval(this.audioSetInterval);
   };
 
   playAudio() {
-    if (this.startcount === 0) {
-      this.source.start();
-      this.startcount++;
-      this.initialAudioSetInterval();
-      this.residualAudioDuration();
-    } else {
-      this.source.context.resume();
-      this.initialAudioSetInterval();
-      this.residualAudioDuration();
-    }
+    // if (this.startcount === 0) {
+    //   this.source.start();
+    //   this.startcount++;
+    //   this.initialAudioSetInterval();
+    // } else {
+    //   this.source.context.resume();
+    //   this.initialAudioSetInterval();
+    // }
+    this.audioRef.play();
   }
 
   pauseAudio() {
-    this.source.context.suspend();
-    this.clearSetInterval();
-    clearInterval(this.audioDurationInterval)
+    // this.source.context.suspend();
+    // this.clearSetInterval();
+    // clearInterval(this.audioDurationInterval)
+    this.audioRef.pause();
   }
 
 
@@ -203,37 +214,54 @@ class MediaContainer extends React.Component {
   }
 
   get duration() {
-    const { currentAudioTime} = this.state;
-    const duration = Math.floor(this.source.buffer.duration);
+    if (!this.audioRef) {
+      return '0:00';
+    }
+    const {currentAudioTime, audioDuration} = this.state;
+    // const duration = Math.floor(this.source.buffer.duration);
+    const duration = Math.floor(audioDuration);
     const minutes = Math.floor((duration - currentAudioTime) / 60);
     let seconds = Math.floor((duration - currentAudioTime) % 60);
+    if (seconds < 10) {
+      seconds = '0' + seconds;
+    }
     return `${minutes}:${seconds}`;
 
     // return ((duration - currentAudioTime) / 60).toFixed(2);
   }
 
+  handleAfterSliderChange = (e) => {
+    this.setState({ currentAudioTime: e });
+    this.audioRef.currentTime = e;
+  };
+
   render() {
-    const {isPlaying} = this.state;
+    const {isPlaying, currentAudioTime} = this.state;
     const src = isPlaying ? 'https://www.pngrepo.com/download/176023/music-pause-button-pair-of-lines.png' : 'https://icon-library.net/images/play-icon-svg/play-icon-svg-15.jpg';
+    const songSecond = this.audioRef ? this.audioRef.duration : 100;
 
     return (
       <div>
         <div className="media-wrapper">
-          <div className="d-flex align-center space-between">
-            <div>{this.props.audio.name}</div>
-            <div className="media-icon" onClick={this.togglePlay}>
-              <img src={src} alt="play"/>
-            </div>
-          </div>
-          {
-            this.source &&
+          <div>
             <div className="d-flex space-between align-center">
-              <div className="playLine-wrap">
-                <div className="playLine" style={{width: this.audioTimePercentage}}/>
+
+              <ReactSlider
+                className="horizontal-slider"
+                thumbClassName="example-thumb"
+                trackClassName="example-track"
+                onChange={this.handleAfterSliderChange}
+                max={songSecond}
+                value={currentAudioTime}
+              />
+              <div style={{margin: '0 10px'}}>{this.duration}</div>
+              <div className="media-icon" onClick={this.togglePlay}>
+                <img src={src} alt="Icon"/>
               </div>
-              <div>{this.duration}</div>
             </div>
-          }
+
+          </div>
+          <audio ref={ref => this.audioRef = ref}/>
         </div>
       </div>
     )
@@ -241,6 +269,8 @@ class MediaContainer extends React.Component {
 }
 
 
-ReactDOM.render(<Wrapper/>, document.getElementById("root"));
+ReactDOM.render(
+  <Wrapper/>
+  , document.getElementById("root"));
 
 

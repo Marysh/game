@@ -11,9 +11,11 @@ ol, ul {
 .d-flex {
     display: flex;
 }
+
 .space-between {
     justify-content: space-between;
 }
+
 .align-center {
     align-items: center;
 }
@@ -116,7 +118,36 @@ ol, ul {
     border: 1px solid black;
     border-radius: 3px;
 }
+
 .playLine {
     height: 6px;
     background-color: #000000;
+}
+
+.horizontal-slider {
+    width: 80%;
+    height: 10px;
+    flex-grow: 1;
+    border: 1px solid #000000;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.example-thumb {
+    height: 100%;
+    width: 20px;
+    color: white;
+    background: #000000;
+    text-align: center;
+    line-height: 10px;
+    outline: none;
+}
+
+.example-track {
+    height: 100%;
+    background: #cccccc;
+}
+
+.example-track-0 {
+    background: #000000;
 }

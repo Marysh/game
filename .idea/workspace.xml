@@ -3,6 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="c6e7b523-0eb2-4a8d-a01c-61afceaf7407" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.js" afterDir="false" />
     </list>
@@ -61,7 +63,7 @@
       <workItem from="1575018133790" duration="15892000" />
       <workItem from="1575274054714" duration="26406000" />
       <workItem from="1575360602227" duration="15033000" />
-      <workItem from="1575448881803" duration="15505000" />
+      <workItem from="1575448881803" duration="27888000" />
     </task>
     <task id="LOCAL-00001" summary="initial">
       <created>1575040320545</created>
@@ -91,7 +93,14 @@
       <option name="project" value="LOCAL" />
       <updated>1575392665257</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="adding playLine">
+      <created>1575472119242</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1575472119242</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -113,6 +122,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="initial" />
     <MESSAGE value="changing html" />
-    <option name="LAST_COMMIT_MESSAGE" value="changing html" />
+    <MESSAGE value="adding playLine" />
+    <option name="LAST_COMMIT_MESSAGE" value="adding playLine" />
   </component>
 </project>
