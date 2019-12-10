@@ -83,6 +83,10 @@ ol, ul {
     padding: 10px 25px;
     background-color: #cccccc;
     border-radius: 15px;
+    margin-bottom: 10px;
+}
+
+.media-item {
     margin-bottom: 20px;
 }
 
@@ -174,10 +178,6 @@ ol, ul {
     height: 2px;
 }
 
-.filters-wrapper {
-    margin-top: 50px;
-}
-
 .vertical-slider {
     width: 10px;
     height: 150px;
@@ -208,5 +208,5 @@ ol, ul {
 
 canvas {
     width: 100%;
-    height: 100px;
+    height: 50px;
 }

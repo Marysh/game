@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import './audioService'
 import ReactSlider from "react-slider";
+import Equalizer from "./accordeon";
+
 
 class Wrapper extends React.Component {
   render() {
@@ -49,27 +51,29 @@ class DropArea extends React.Component {
     this.dropArea = React.createRef();
   }
 
-  componentDidMount() {
+  dropEvent = (evt) => {
     const {onDrop} = this.props;
 
-    function dropEvent(evt) {
-      evt.stopPropagation();
-      evt.preventDefault();
-      onDrop(evt.dataTransfer.files);
-      evt.target.style.opacity = "1";
-    }
+    evt.stopPropagation();
+    evt.preventDefault();
+    onDrop(evt.dataTransfer.files);
+    evt.target.style.opacity = "1";
+  }
 
-    function dragOver(evt) {
-      evt.stopPropagation();
-      evt.preventDefault();
-      return false;
-    }
+  dragOver = (evt) => {
+    evt.stopPropagation();
+    evt.preventDefault();
+    return false;
+  }
 
-    this.dropArea.current.addEventListener('drop', dropEvent, false);
-    this.dropArea.current.addEventListener('dragover', dragOver, false);
-    this.dropArea.current.addEventListener("dragenter", (event) => {
-      event.target.style.opacity = "0.5";
-    }, false);
+  dragEnter = (event) => {
+    event.target.style.opacity = "0.5";
+  }
+
+  componentDidMount() {
+    this.dropArea.current.addEventListener('drop', this.dropEvent, false);
+    this.dropArea.current.addEventListener('dragover', this.dragOver, false);
+    this.dropArea.current.addEventListener("dragenter", this.dragEnter, false);
   }
 
   render() {
@@ -82,11 +86,11 @@ class DropArea extends React.Component {
     )
   }
 
-  // componentWillUnmount() {
-  //   this.dropArea.current.removeEventListener();
-  //   this.dropArea.current.removeEventListener();
-  //   this.dropArea.current.removeEventListener();
-  // }
+  componentWillUnmount() {
+    this.dropArea.current.removeEventListener('drop', this.dropEvent, false);
+    this.dropArea.current.removeEventListener('dragover', this.dragOver, false);
+    this.dropArea.current.removeEventListener("dragenter", this.dragEnter, false);
+  }
 }
 
 class MediaContainer extends React.Component {
@@ -100,25 +104,6 @@ class MediaContainer extends React.Component {
   componentDidMount() {
     const audioUrl = window.URL.createObjectURL(this.props.audio);
     this.audioRef.src = audioUrl;
-
-    //
-    // this.canvasRef.width = window.innerWidth;
-    // this.canvasRef.height = window.innerHeight;
-    //
-    // let ctx = this.canvasRef.getContext("2d");
-    // this.analyser.fftSize = 256;
-    //
-    // let bufferLength = this.analyser.frequencyBinCount;
-    // console.log(bufferLength);
-    //
-    // let dataArray = new Uint8Array(bufferLength);
-    //
-    // let WIDTH = this.canvasRef.width;
-    // let HEIGHT = this.canvasRef.height;
-    //
-    // let barWidth = (WIDTH / bufferLength) * 2.5;
-    // let barHeight;
-    // let x = 0;
 
     this.audioContext = new AudioContext();
     this.source = this.audioContext.createMediaElementSource(this.audioRef);
@@ -193,16 +178,11 @@ class MediaContainer extends React.Component {
     this.lowPass.Q.value = 0.7;
 
     this.audioGain.gain.value = 0.5;
-
-    // this.audioGain.connect(this.audioContext.destination);
-    // this.source.connect(this.audioContext.destination);
-    // this.source.connect(this.audioGain);
     this.renderAudioVisualization()
   };
 
   renderAudioVisualization = () => {
     let bufferLength = this.analyser.frequencyBinCount;
-    console.log(bufferLength);
 
     let dataArray = new Uint8Array(bufferLength);
 
@@ -210,9 +190,10 @@ class MediaContainer extends React.Component {
     let HEIGHT = this.canvasRef.height;
     let ctx = this.canvasRef.getContext("2d");
 
-    let barWidth = (WIDTH / bufferLength) * 2.5;
+    let barWidth = (WIDTH / bufferLength) * 10;
     let barHeight;
     let x = 0;
+
 
     const renderFrame = () => {
       requestAnimationFrame(renderFrame);
@@ -221,7 +202,7 @@ class MediaContainer extends React.Component {
 
       this.analyser.getByteFrequencyData(dataArray);
 
-      ctx.fillStyle = "#000";
+      ctx.fillStyle = "#999999";
       ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
       for (let i = 0; i < bufferLength; i++) {
@@ -249,42 +230,6 @@ class MediaContainer extends React.Component {
     this.audioRef.removeEventListener('ended', this.onAudioEnd);
     this.audioRef.removeEventListener('durationchange', this.changeAudioDuration);
   };
-
-  // createAudio = () => {
-  //   this.processor = this.contextAudio.createScriptProcessor(2048, 1, 1);
-  //   this.analyser = this.contextAudio.createAnalyser();
-  //   this.source.connect(this.contextAudio.destination);
-  //   this.source.connect(this.analyser);
-  //   this.analyser.connect(this.processor);
-  //   this.processor.connect(this.contextAudio.destination);
-  //   this.setState({audioDuration: Math.floor(this.source.buffer.duration / 60 * 100) / 100});
-  // };
-
-  // initAudio = (data) => {
-  //   this.source = this.contextAudio.createBufferSource();
-  //
-  //   if (this.contextAudio.decodeAudioData) {
-  //     this.contextAudio.decodeAudioData(data, (buffer) => {
-  //       this.source.buffer = buffer;
-  //       this.createAudio();
-  //     }, (e) => {
-  //       console.log(e);
-  //     });
-  //   } else {
-  //     this.source.buffer = this.contextAudio.createBuffer(data, false /*mixToMono*/);
-  //     this.createAudio();
-  //   }
-  // };
-
-  // initialAudioSetInterval = () => {
-  //   this.audioSetInterval = setInterval(() => {
-  //     this.setState({currentAudioTime: this.source.context.currentTime});
-  //   }, 1000);
-  // };
-
-  // clearSetInterval = () => {
-  //   clearInterval(this.audioSetInterval);
-  // };
 
   playAudio() {
     this.audioRef.play();
@@ -358,7 +303,7 @@ class MediaContainer extends React.Component {
     const songSecond = this.audioRef ? this.audioRef.duration : 100;
 
     return (
-      <div>
+      <div className="media-item">
         <div className="media-wrapper">
           <div>
             <div className="d-flex space-between align-center">
@@ -393,94 +338,17 @@ class MediaContainer extends React.Component {
 
         <canvas ref={ref => this.canvasRef = ref}/>
 
-        <div className="d-flex space-between align-center filters-wrapper">
-          <div className="d-flex">
-            <ReactSlider
-              className="vertical-slider"
-              thumbClassName="vertical-slider-thumb"
-              trackClassName="vertical-slider-track"
-              orientation="vertical"
-              onChange={this.handleHighShelfChange}
-              max={24000}
-              invert
-            />
-            <ReactSlider
-              className="vertical-slider"
-              thumbClassName="vertical-slider-thumb"
-              trackClassName="vertical-slider-track"
-              orientation="vertical"
-              onChange={this.handleHighShelfGain}
-              min={-50}
-              max={50}
-              invert
-            />
-          </div>
-          <div className="d-flex">
-            <ReactSlider
-              className="vertical-slider"
-              thumbClassName="vertical-slider-thumb"
-              trackClassName="vertical-slider-track"
-              orientation="vertical"
-              onChange={this.handleHighPassChange}
-              max={24000}
-              invert
-            />
-            <ReactSlider
-              className="vertical-slider"
-              thumbClassName="vertical-slider-thumb"
-              trackClassName="vertical-slider-track"
-              orientation="vertical"
-              onChange={this.handleLowShelfGain}
-              min={-50}
-              max={50}
-              invert
-            />
-          </div>
-          <div className="d-flex">
-            <ReactSlider
-              className="vertical-slider"
-              thumbClassName="vertical-slider-thumb"
-              trackClassName="vertical-slider-track"
-              orientation="vertical"
-              onChange={this.handleLowShelfChange}
-              max={24000}
-              invert
-            />
-            <ReactSlider
-              className="vertical-slider"
-              thumbClassName="vertical-slider-thumb"
-              trackClassName="vertical-slider-track"
-              orientation="vertical"
-              onChange={this.handleHighPassQ}
-              min={0.7}
-              max={12}
-              step={0.1}
-              invert
-            />
-          </div>
-          <div className="d-flex">
-            <ReactSlider
-              className="vertical-slider"
-              thumbClassName="vertical-slider-thumb"
-              trackClassName="vertical-slider-track"
-              orientation="vertical"
-              onChange={this.handleLowPassChange}
-              max={24000}
-              invert
-            />
-            <ReactSlider
-              className="vertical-slider"
-              thumbClassName="vertical-slider-thumb"
-              trackClassName="vertical-slider-track"
-              orientation="vertical"
-              onChange={this.handleLowPassQ}
-              min={0.7}
-              max={12}
-              step={0.1}
-              invert
-            />
-          </div>
-        </div>
+        <Equalizer
+          onHighShelfChange={this.handleHighShelfChange}
+          onHighShelfGain={this.handleHighShelfGain}
+          onHighPassChange={this.handleHighPassChange}
+          onLowShelfGain={this.handleLowShelfGain}
+          onLowShelfChange={this.handleLowShelfChange}
+          onHighPassQ={this.handleHighPassQ}
+          onLowPassChange={this.handleLowPassChange}
+          onLowPassQ={this.handleLowPassQ}
+        />
+
       </div>
     )
   }
