@@ -9,7 +9,7 @@
     "react-accordeon": "^1.1.1",
     "react-dom": "^16.12.0",
     "react-redux": "^7.1.3",
-    "react-scripts": "3.2.0",
+    "react-scripts": "5.0.1",
     "react-services-injector": "^1.0.0-rc.6",
     "react-slider": "^1.0.1"
   },
